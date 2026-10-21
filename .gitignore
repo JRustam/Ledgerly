@@ -1,0 +1,38 @@
+# Gradle / Android build output
+.gradle/
+.kotlin/
+**/build/
+.externalNativeBuild/
+.cxx/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+# Machine-specific SDK and IDE configuration
+local.properties
+.idea/
+*.iml
+.DS_Store
+# Signing material and private configuration
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+key.properties
+keystore.properties
+signing.properties
+secrets.properties
+credentials.properties
+.env
+.env.*
+!*.example
+# Service credentials are not required by this offline app
+google-services.json
+service-account*.json
+# Temporary files and crash dumps
+*.log
+*.hprof
+*.tmp
