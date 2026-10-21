@@ -13,14 +13,29 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddTransactionViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    @Before fun setup() { Dispatchers.setMain(dispatcher) }
-    @After fun teardown() { Dispatchers.resetMain() }
+    @Before
+    fun setup() {
+        Dispatchers.setMain(dispatcher)
+    }
 
-    @Test fun preventsDoubleSaveAndResetsAfterSuccess() = runTest(dispatcher) {
+    @After
+    fun teardown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun preventsDoubleSaveAndResetsAfterSuccess() = runTest(dispatcher) {
         val transactions = mutableListOf<Transaction>()
-        val vm = AddTransactionViewModel(AddTransaction(object : FakeTransactionRepository() {
-            override suspend fun insert(transaction: Transaction) { delay(100); transactions += transaction }
-        }), SavedStateHandle(), EditTransaction(FakeTransactionRepository()), FakeCurrencyPreferences())
+        val vm = AddTransactionViewModel(
+            AddTransaction(object : FakeTransactionRepository() {
+                override suspend fun insert(transaction: Transaction) {
+                    delay(100); transactions += transaction
+                }
+            }),
+            SavedStateHandle(),
+            EditTransaction(FakeTransactionRepository()),
+            FakeCurrencyPreferences()
+        )
         advanceUntilIdle()
         vm.edit(amount = "25", category = Category.FOOD)
         vm.save(); vm.save()
@@ -32,11 +47,19 @@ class AddTransactionViewModelTest {
         assertFalse(vm.state.value.isSaving)
     }
 
-    @Test fun failedSaveKeepsDraftAndAllowsRetry() = runTest(dispatcher) {
+    @Test
+    fun failedSaveKeepsDraftAndAllowsRetry() = runTest(dispatcher) {
         var fail = true
-        val vm = AddTransactionViewModel(AddTransaction(object : FakeTransactionRepository() {
-            override suspend fun insert(transaction: Transaction) { if (fail) error("Disk full") }
-        }), SavedStateHandle(), EditTransaction(FakeTransactionRepository()), FakeCurrencyPreferences())
+        val vm = AddTransactionViewModel(
+            AddTransaction(object : FakeTransactionRepository() {
+                override suspend fun insert(transaction: Transaction) {
+                    if (fail) error("Disk full")
+                }
+            }),
+            SavedStateHandle(),
+            EditTransaction(FakeTransactionRepository()),
+            FakeCurrencyPreferences()
+        )
         advanceUntilIdle()
         vm.edit(amount = "25", category = Category.FOOD)
         vm.save(); advanceUntilIdle()
@@ -47,15 +70,26 @@ class AddTransactionViewModelTest {
         assertTrue(vm.state.value.saved)
     }
 
-    @Test fun draftRestoresAndTypeChangeClearsCategory() = runTest(dispatcher) {
+    @Test
+    fun draftRestoresAndTypeChangeClearsCategory() = runTest(dispatcher) {
         val handle = SavedStateHandle()
         val add = AddTransaction(object : FakeTransactionRepository() {
             override suspend fun insert(transaction: Transaction) = Unit
         })
-        val first = AddTransactionViewModel(add, handle, EditTransaction(FakeTransactionRepository()), FakeCurrencyPreferences())
+        val first = AddTransactionViewModel(
+            add,
+            handle,
+            EditTransaction(FakeTransactionRepository()),
+            FakeCurrencyPreferences()
+        )
         advanceUntilIdle()
         first.edit(amount = "18.50", category = Category.FOOD, description = "Dinner")
-        val restored = AddTransactionViewModel(add, handle, EditTransaction(FakeTransactionRepository()), FakeCurrencyPreferences())
+        val restored = AddTransactionViewModel(
+            add,
+            handle,
+            EditTransaction(FakeTransactionRepository()),
+            FakeCurrencyPreferences()
+        )
         assertEquals("18.50", restored.state.value.amount)
         assertEquals(Category.FOOD, restored.state.value.category)
         restored.edit(type = TransactionType.INCOME)

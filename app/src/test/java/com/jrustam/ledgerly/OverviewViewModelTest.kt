@@ -15,20 +15,46 @@ import org.junit.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class OverviewViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    @Before fun setup() { Dispatchers.setMain(dispatcher) }
+    @Before
+    fun setup() {
+        Dispatchers.setMain(dispatcher)
+    }
+
     private val viewModels = mutableListOf<OverviewViewModel>()
-    @After fun teardown() {
+
+    @After
+    fun teardown() {
         try {
             runTest(dispatcher) {
                 // Await Default-dispatcher flow cancellation before replacing Main.
                 viewModels.forEach { it.viewModelScope.coroutineContext[Job]?.cancelAndJoin() }
             }
-        } finally { Dispatchers.resetMain() }
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
-    private val income = Transaction("income", 10000, "USD", TransactionType.INCOME, Category.SALARY, LocalDate.now(), null)
-    private val expense = Transaction("expense", 2500, "USD", TransactionType.EXPENSE, Category.FOOD, LocalDate.now(), null)
 
-    @Test fun observesChangesAndFiltersWithoutChangingHomeTotals() = runTest(dispatcher) {
+    private val income = Transaction(
+        "income",
+        10000,
+        "USD",
+        TransactionType.INCOME,
+        Category.SALARY,
+        LocalDate.now(),
+        null
+    )
+    private val expense = Transaction(
+        "expense",
+        2500,
+        "USD",
+        TransactionType.EXPENSE,
+        Category.FOOD,
+        LocalDate.now(),
+        null
+    )
+
+    @Test
+    fun observesChangesAndFiltersWithoutChangingHomeTotals() = runTest(dispatcher) {
         val repo = FakeTransactionRepository()
         val vm = OverviewViewModel(repo, SavedStateHandle()).also(viewModels::add)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect() }
@@ -50,7 +76,9 @@ class OverviewViewModelTest {
         val deleted = vm.state.first { it.transactions.size == 1 && it.pendingDelete == null }
         assertEquals(BigInteger("-3500"), deleted.summaries["USD"]?.balanceMinor)
     }
-    @Test fun readFailureCanBeRetried() = runTest(dispatcher) {
+
+    @Test
+    fun readFailureCanBeRetried() = runTest(dispatcher) {
         var fail = true
         val repo = object : FakeTransactionRepository() {
             override fun observeAll(): Flow<List<Transaction>> = flow {
@@ -63,10 +91,14 @@ class OverviewViewModelTest {
         fail = false; vm.retry()
         assertEquals(listOf(income), vm.state.first { it.transactions.isNotEmpty() }.transactions)
     }
-    @Test fun deleteFailureRetainsRecordAndConfirmationForRetry() = runTest(dispatcher) {
+
+    @Test
+    fun deleteFailureRetainsRecordAndConfirmationForRetry() = runTest(dispatcher) {
         var fail = true
         val repo = object : FakeTransactionRepository() {
-            override suspend fun delete(id: String) { if (fail) error("Write failed") else super.delete(id) }
+            override suspend fun delete(id: String) {
+                if (fail) error("Write failed") else super.delete(id)
+            }
         }
         repo.rows.value = listOf(income)
         val vm = OverviewViewModel(repo, SavedStateHandle()).also(viewModels::add)

@@ -10,9 +10,13 @@ open class FakeTransactionRepository : TransactionRepository {
     override suspend fun insert(transaction: Transaction) {
         if (findById(transaction.id) == null) rows.value += transaction
     }
+
     override suspend fun update(transaction: Transaction) {
         if (findById(transaction.id) == null) throw TransactionNotFound()
         rows.value = rows.value.map { if (it.id == transaction.id) transaction else it }
     }
-    override suspend fun delete(id: String) { rows.value = rows.value.filterNot { it.id == id } }
+
+    override suspend fun delete(id: String) {
+        rows.value = rows.value.filterNot { it.id == id }
+    }
 }

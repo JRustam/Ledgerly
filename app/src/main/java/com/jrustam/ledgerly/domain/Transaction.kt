@@ -3,6 +3,7 @@ package com.jrustam.ledgerly.domain
 import java.time.LocalDate
 
 enum class TransactionType { EXPENSE, INCOME }
+
 enum class Category(val type: TransactionType) {
     FOOD(TransactionType.EXPENSE), TRANSPORT(TransactionType.EXPENSE),
     SHOPPING(TransactionType.EXPENSE), BILLS(TransactionType.EXPENSE),

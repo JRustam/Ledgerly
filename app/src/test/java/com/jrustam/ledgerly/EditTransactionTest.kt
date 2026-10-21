@@ -13,14 +13,31 @@ import org.junit.*
 class EditTransactionTest {
     private val dispatcher = StandardTestDispatcher()
     private val repository = FakeTransactionRepository()
-    private val original = Transaction("original", 1234, "USD", TransactionType.EXPENSE, Category.FOOD,
-        LocalDate.of(2025, 5, 5), "Lunch")
-    @Before fun setup() { Dispatchers.setMain(dispatcher); repository.rows.value = listOf(original) }
-    @After fun teardown() { Dispatchers.resetMain() }
-    private fun editor(handle: SavedStateHandle = SavedStateHandle(mapOf("transactionId" to original.id))) =
-        AddTransactionViewModel(AddTransaction(repository), handle, EditTransaction(repository), FakeCurrencyPreferences())
+    private val original = Transaction(
+        "original", 1234, "USD", TransactionType.EXPENSE, Category.FOOD,
+        LocalDate.of(2025, 5, 5), "Lunch"
+    )
 
-    @Test fun loadsAndEditsExistingRecordWithoutInserting() = runTest(dispatcher) {
+    @Before
+    fun setup() {
+        Dispatchers.setMain(dispatcher); repository.rows.value = listOf(original)
+    }
+
+    @After
+    fun teardown() {
+        Dispatchers.resetMain()
+    }
+
+    private fun editor(handle: SavedStateHandle = SavedStateHandle(mapOf("transactionId" to original.id))) =
+        AddTransactionViewModel(
+            AddTransaction(repository),
+            handle,
+            EditTransaction(repository),
+            FakeCurrencyPreferences()
+        )
+
+    @Test
+    fun loadsAndEditsExistingRecordWithoutInserting() = runTest(dispatcher) {
         val vm = editor()
         assertTrue(vm.state.value.isLoading)
         advanceUntilIdle()
@@ -35,7 +52,9 @@ class EditTransactionTest {
         assertEquals(1525L, repository.rows.value.single().amountMinor)
         assertEquals(TransactionType.INCOME, repository.rows.value.single().type)
     }
-    @Test fun preservesUnsavedEditsAcrossRecreation() = runTest(dispatcher) {
+
+    @Test
+    fun preservesUnsavedEditsAcrossRecreation() = runTest(dispatcher) {
         val handle = SavedStateHandle(mapOf("transactionId" to original.id))
         val first = editor(handle); advanceUntilIdle()
         first.edit(amount = "99.99", description = "Changed draft")
@@ -44,14 +63,18 @@ class EditTransactionTest {
         assertEquals("Changed draft", restored.state.value.description)
         assertTrue(restored.state.value.isEditing)
     }
-    @Test fun deletedRecordIsNotRecreatedBySavingStaleEditor() = runTest(dispatcher) {
+
+    @Test
+    fun deletedRecordIsNotRecreatedBySavingStaleEditor() = runTest(dispatcher) {
         val vm = editor(); advanceUntilIdle()
         repository.delete(original.id)
         vm.save(); advanceUntilIdle()
         assertTrue(vm.state.value.notFound)
         assertTrue(repository.rows.value.isEmpty())
     }
-    @Test fun editingUsesSameValidationAsAdding() = runTest(dispatcher) {
+
+    @Test
+    fun editingUsesSameValidationAsAdding() = runTest(dispatcher) {
         val vm = editor(); advanceUntilIdle()
         vm.edit(amount = "0")
         vm.save(); advanceUntilIdle()
