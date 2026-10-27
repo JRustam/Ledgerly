@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jrustam.ledgerly.R
-import com.jrustam.ledgerly.domain.LedgerCurrency
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
 import com.jrustam.ledgerly.ui.design.LedgerShapes
 
 @Composable

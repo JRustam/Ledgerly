@@ -1,7 +1,7 @@
 package com.jrustam.ledgerly.ui.common
 
 import com.jrustam.ledgerly.R
-import com.jrustam.ledgerly.domain.Category
+import com.jrustam.ledgerly.domain.model.Category
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.text.NumberFormat
@@ -9,8 +9,8 @@ import java.util.Currency
 import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
-import com.jrustam.ledgerly.domain.AppLanguage
-import com.jrustam.ledgerly.domain.LedgerCurrency
+import com.jrustam.ledgerly.domain.model.AppLanguage
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
 
 fun formatMoney(minor: BigInteger, currencyCode: String, locale: Locale): String =
     NumberFormat.getCurrencyInstance(locale).apply {
@@ -26,6 +26,12 @@ fun formatMoney(minor: Long, currencyCode: String, locale: Locale): String =
 fun appLocale(): Locale = LocalConfiguration.current.locales[0]
 
 fun AppLanguage.labelResource(): Int = when (this) {
+    AppLanguage.ARABIC -> R.string.language_ar
+    AppLanguage.FRENCH -> R.string.language_fr
+    AppLanguage.GERMAN -> R.string.language_de
+    AppLanguage.UKRAINIAN -> R.string.language_uk
+    AppLanguage.SERBIAN_LATIN -> R.string.language_sr_latn
+    AppLanguage.SERBIAN_CYRILLIC -> R.string.language_sr_cyrl
     AppLanguage.SYSTEM -> R.string.language_system
     AppLanguage.AZERBAIJANI -> R.string.language_az
     AppLanguage.ENGLISH -> R.string.language_en
@@ -34,6 +40,8 @@ fun AppLanguage.labelResource(): Int = when (this) {
 }
 
 fun LedgerCurrency.labelResource(): Int = when (this) {
+    LedgerCurrency.UAH -> R.string.currency_uah
+    LedgerCurrency.RSD -> R.string.currency_rsd
     LedgerCurrency.AZN -> R.string.currency_azn
     LedgerCurrency.USD -> R.string.currency_usd
     LedgerCurrency.EUR -> R.string.currency_eur

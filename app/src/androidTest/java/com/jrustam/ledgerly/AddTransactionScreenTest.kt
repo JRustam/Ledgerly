@@ -5,7 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.activity.ComponentActivity
-import com.jrustam.ledgerly.domain.*
+import com.jrustam.ledgerly.domain.model.Transaction
+import com.jrustam.ledgerly.domain.usecase.AddTransaction
+import com.jrustam.ledgerly.domain.usecase.EditTransaction
 import com.jrustam.ledgerly.ui.addtransaction.*
 import com.jrustam.ledgerly.ui.theme.LedgerlyTheme
 import org.junit.Rule

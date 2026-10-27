@@ -24,7 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jrustam.ledgerly.R
-import com.jrustam.ledgerly.domain.*
+import com.jrustam.ledgerly.domain.model.BalanceSummary
+import com.jrustam.ledgerly.domain.model.Category
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
+import com.jrustam.ledgerly.domain.model.Transaction
+import com.jrustam.ledgerly.domain.model.TransactionType
 import com.jrustam.ledgerly.ui.common.*
 import com.jrustam.ledgerly.ui.design.*
 import java.time.format.DateTimeFormatter
@@ -32,15 +36,18 @@ import java.time.format.FormatStyle
 
 @Composable
 fun HomeScreen(state: OverviewState, onAdd: () -> Unit, onHistory: () -> Unit,
-               onEdit: (String) -> Unit, onRetry: () -> Unit, defaultCurrency: LedgerCurrency) {
+               onEdit: (String) -> Unit, onRetry: () -> Unit, defaultCurrency: LedgerCurrency,
+               ledgerBalances: Map<String, java.math.BigInteger> = emptyMap(), quickActions: @Composable () -> Unit = {}) {
     val locale = appLocale()
     val motion = LocalMotionEnabled.current
     if (state.loading || state.failed) { LedgerLoadState(state.loading, onRetry); return }
-    val balances = state.summaries.ifEmpty { mapOf(defaultCurrency.name to BalanceSummary()) }
+    val balances = (state.summaries.keys + ledgerBalances.keys).associateWith { state.summaries[it] ?: BalanceSummary() }
+        .ifEmpty { mapOf(defaultCurrency.name to BalanceSummary()) }
     val currencies = balances.keys.toList()
     var selected by rememberSaveable { mutableStateOf(defaultCurrency.name) }
     val currency = selected.takeIf { it in balances } ?: currencies.first()
     val summary = balances.getValue(currency)
+    val balance = ledgerBalances[currency] ?: summary.balanceMinor
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 92.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
@@ -56,7 +63,7 @@ fun HomeScreen(state: OverviewState, onAdd: () -> Unit, onHistory: () -> Unit,
         item {
             CardEntrance {
                 Box(Modifier.fillMaxWidth().clip(LedgerShapes.card)
-                    .background(Brush.linearGradient(listOf(Color(0xFF123C73), Color(0xFF2464C7), Color(0xFF6261D3))))) {
+                    .background(Brush.linearGradient(listOf(Color(0xFF113C37), Color(0xFF196A5C), Color(0xFF3B7774))))) {
                     // Decorative light, not a financial chart or data visualization.
                     Box(Modifier.align(Alignment.TopEnd).offset(x = 46.dp, y = (-72).dp).size(200.dp)
                         .background(Color(0xFF65DBEE).copy(alpha = 0.12f), CircleShape))
@@ -69,7 +76,7 @@ fun HomeScreen(state: OverviewState, onAdd: () -> Unit, onHistory: () -> Unit,
                                 modifier = Modifier.background(Color.White.copy(alpha = 0.13f), LedgerShapes.small)
                                     .padding(horizontal = 10.dp, vertical = 5.dp))
                         }
-                        AnimatedMoney(formatMoney(summary.balanceMinor, currency, locale), MaterialTheme.typography.displaySmall, Color.White)
+                        AnimatedMoney(formatMoney(balance, currency, locale), MaterialTheme.typography.displaySmall, Color.White)
                         Text(stringResource(R.string.all_time_currency, currency), style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.65f))
                         HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
@@ -81,6 +88,7 @@ fun HomeScreen(state: OverviewState, onAdd: () -> Unit, onHistory: () -> Unit,
                 }
             }
         }
+        item { quickActions() }
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.recent_transactions), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
@@ -112,8 +120,16 @@ fun HistoryScreen(state: OverviewState, onFilter: (TransactionFilter) -> Unit, o
                   onEdit: (String) -> Unit, onDelete: (Transaction) -> Unit, onRetry: () -> Unit) {
     val locale = appLocale()
     val motion = LocalMotionEnabled.current
+    var search by rememberSaveable { mutableStateOf("") }
+    var selectedCurrency by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(search, { search = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                label = { Text(stringResource(R.string.search_transactions)) }, shape = LedgerShapes.control)
+            com.jrustam.ledgerly.ui.finance.Choice(stringResource(R.string.default_currency),
+                listOf(stringResource(R.string.filter_all)) + LedgerCurrency.entries.map { it.name },
+                LedgerCurrency.entries.indexOfFirst { it.name == selectedCurrency } + 1,
+                { selectedCurrency = LedgerCurrency.entries.getOrNull(it - 1)?.name.orEmpty() })
             Text(stringResource(R.string.history_subtitle), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             LedgerSelection(listOf(stringResource(R.string.filter_all), stringResource(R.string.income), stringResource(R.string.expense)),
@@ -121,14 +137,20 @@ fun HistoryScreen(state: OverviewState, onFilter: (TransactionFilter) -> Unit, o
         }
         if (state.loading || state.failed) LedgerLoadState(state.loading, onRetry)
         else {
-            val visible = state.visibleTransactions
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val visible = state.visibleTransactions.filter {
+                (selectedCurrency.isEmpty() || it.currency == selectedCurrency) &&
+                    (search.isBlank() || it.description.orEmpty().contains(search, true) ||
+                        context.getString(it.category.labelResource()).contains(search, true) ||
+                        it.date.toString().contains(search) || it.currency.contains(search,true))
+            }
             LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 92.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (visible.isEmpty()) item {
                     EmptyPanel(stringResource(R.string.empty_history_title),
                         stringResource(if (state.transactions.isEmpty()) R.string.empty_home_body else R.string.empty_filter_body),
                         stringResource(if (state.transactions.isEmpty()) R.string.add_first_transaction else R.string.clear_filter),
-                        { if (state.transactions.isEmpty()) onAdd() else onFilter(TransactionFilter.ALL) })
+                        { if (state.transactions.isEmpty()) onAdd() else { search = ""; selectedCurrency = ""; onFilter(TransactionFilter.ALL) } })
                 }
                 visible.groupBy { it.date }.forEach { (date, transactions) ->
                     item(key = "date-$date") {
@@ -159,7 +181,7 @@ private fun Category.icon(): ImageVector = when (this) {
 }
 
 @Composable
-private fun TransactionCard(transaction: Transaction, onEdit: () -> Unit,
+fun TransactionCard(transaction: Transaction, onEdit: () -> Unit,
                             onDelete: (() -> Unit)? = null, modifier: Modifier = Modifier) {
     val locale = appLocale()
     val income = transaction.type == TransactionType.INCOME

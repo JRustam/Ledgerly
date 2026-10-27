@@ -1,6 +1,9 @@
 package com.jrustam.ledgerly
 
-import com.jrustam.ledgerly.domain.*
+import com.jrustam.ledgerly.domain.model.AppLanguage
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
+import com.jrustam.ledgerly.domain.repository.CurrencyPreferences
+import com.jrustam.ledgerly.domain.repository.LanguagePreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class FakeCurrencyPreferences : CurrencyPreferences {

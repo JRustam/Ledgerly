@@ -2,8 +2,18 @@ package com.jrustam.ledgerly
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.lifecycle.SavedStateHandle
-import com.jrustam.ledgerly.data.DataStoreCurrencyPreferences
-import com.jrustam.ledgerly.domain.*
+import com.jrustam.ledgerly.data.repository.DataStoreCurrencyPreferences
+import com.jrustam.ledgerly.data.repository.ProductPreferenceStore
+import androidx.datastore.preferences.core.*
+import com.jrustam.ledgerly.domain.model.AppLanguage
+import com.jrustam.ledgerly.domain.model.Appearance
+import com.jrustam.ledgerly.domain.model.Category
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
+import com.jrustam.ledgerly.domain.model.ProductPreferences
+import com.jrustam.ledgerly.domain.repository.CurrencyPreferences
+import com.jrustam.ledgerly.domain.repository.ProductPreferencesRepository
+import com.jrustam.ledgerly.domain.usecase.AddTransaction
+import com.jrustam.ledgerly.domain.usecase.EditTransaction
 import com.jrustam.ledgerly.ui.addtransaction.AddTransactionViewModel
 import com.jrustam.ledgerly.ui.settings.SettingsViewModel
 import kotlinx.coroutines.*
@@ -46,6 +56,31 @@ class UserPreferencesTest {
             prefs.setDefaultCurrency(LedgerCurrency.AZN)
         }
         withStore { prefs -> assertEquals(LedgerCurrency.AZN, prefs.defaultCurrency.first()) }
+    }
+
+    @Test
+    fun productPreferencesReadExistingKeysAndPreserveCurrencyAfterReopen() = runTest {
+        val file = temporary.root.resolve("product.preferences_pb")
+        suspend fun withStore(action: suspend (androidx.datastore.core.DataStore<Preferences>) -> Unit) {
+            val job = SupervisorJob()
+            val store = PreferenceDataStoreFactory.create(scope = CoroutineScope(job + Dispatchers.IO)) { file }
+            try { action(store) } finally { job.cancelAndJoin() }
+        }
+        withStore { store ->
+            store.edit {
+                it[stringPreferencesKey("appearance")] = "DARK"
+                it[booleanPreferencesKey("onboarded")] = true
+                it[stringPreferencesKey("default_currency")] = "UAH"
+            }
+            val preferences: ProductPreferencesRepository = ProductPreferenceStore(store)
+            assertEquals(ProductPreferences(Appearance.DARK, true), preferences.data.first())
+            preferences.appearance(Appearance.LIGHT)
+            preferences.completeOnboarding()
+        }
+        withStore { store ->
+            assertEquals(ProductPreferences(Appearance.LIGHT, true), ProductPreferenceStore(store).data.first())
+            assertEquals(LedgerCurrency.UAH, DataStoreCurrencyPreferences(store).defaultCurrency.first())
+        }
     }
 
     @Test

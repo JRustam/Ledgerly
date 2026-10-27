@@ -2,7 +2,8 @@ package com.jrustam.ledgerly
 
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
-import com.jrustam.ledgerly.data.*
+import com.jrustam.ledgerly.data.TransactionDatabase
+import com.jrustam.ledgerly.data.local.entity.TransactionEntity
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

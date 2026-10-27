@@ -1,190 +1,123 @@
-<div align="center">
-
 # Ledgerly
 
-### Your money, clearly.
+An offline-first personal finance application for Android, built with Kotlin, Jetpack Compose, and Material 3. Ledgerly keeps original amounts and currencies intact while helping you organize transactions, wallets, budgets, and savings goals.
 
-A thoughtfully designed, offline-first Android finance app built with Kotlin and Jetpack Compose.
-Track income and expenses, keep currencies separate, and make your ledger feel at home in four languages.
+> Development project, not a Google Play release. Milestones 1 (module boundaries) and 2 (domain/use cases) are complete. Historical verification results are documented in [Verification](docs/VERIFICATION.md).
 
-![Android](https://img.shields.io/badge/Android-API%2024%2B-3DDC84?logo=android&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)
-![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)
-![Storage](https://img.shields.io/badge/Storage-Offline%20first-2464C7)
+## Implemented features
 
-[Features](#features) · [Screenshots](#screenshots) · [Architecture](#architecture) · [Getting started](#getting-started) · [Testing](#testing)
+- Home dashboard with separate balances for each currency and a monthly cash-flow summary.
+- Transaction creation, editing, deletion with confirmation, searchable history, and income/expense/currency filters.
+- Manually managed cash, card, and bank wallets; opening-balance adjustments; transfers recording both sent and received amounts.
+- Monthly category budgets, savings contributions and history-based completion estimates.
+- Monthly recurring-payment schedules. These do not automatically record payments or send reminders.
+- Monthly recap, category spending, six-month trends, and deterministic budget/spending comparisons based on stored records.
+- Currency converter with user-initiated HTTPS reference-rate retrieval, dated offline cache, and explicit approximate/unavailable states.
+- Transaction-only CSV export through Android's document picker, with quoting and spreadsheet-formula escaping.
+- Onboarding, persisted language/default-currency/appearance preferences, light and dark themes, and reduced-motion support.
+- My Profile with an editable display name, Android Photo Picker, removable circular avatar, and app-private photo storage. Photos are resized locally; no login or upload is involved.
 
-</div>
-
-## Features
-
-- **Home dashboard** — a blue-gradient balance card, independent totals for each currency, and recent transactions.
-- **Transaction history** — newest-first entries grouped by date, income/expense filters, editing, and deletion with confirmation.
-- **Add and edit** — exact amounts, currency and category selectors, a date picker, optional notes, validation, and recoverable drafts.
-- **Live local updates** — saving, editing, or deleting a transaction immediately updates the ledger through Room Flow.
-- **Language preferences** — Azerbaijani, English, Russian, Turkish, or the system language, independent of the device language.
-- **Currency preferences** — a persisted default for new transactions; existing entries keep their own ISO currency code and amount.
-- **Refined interface** — shared Compose components, compact navigation, light/dark themes, blue/indigo gradients, subtle transitions and press feedback.
-- **Accessible motion** — animations respect Android’s Remove animations setting. Monetary values are never interpolated through floating point.
-
-## Screenshots
-
-Actual Android API 36 emulator captures of the application, not mockups. The sample entries are created by an opt-in instrumentation test and are never included in production screens or seeded on app startup.
-
-<table>
-  <tr>
-    <th>Home</th><th>History</th><th>Add transaction</th>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/home.png" width="250" alt="Ledgerly Home with a blue-gradient balance card" /></td>
-    <td><img src="docs/screenshots/history.png" width="250" alt="Transactions grouped by date" /></td>
-    <td><img src="docs/screenshots/add-transaction.png" width="250" alt="Income transaction form" /></td>
-  </tr>
-  <tr>
-    <th>Dark theme</th><th>Settings</th><th>Azerbaijani</th>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/home-dark.png" width="250" alt="Home in dark mode" /></td>
-    <td><img src="docs/screenshots/settings.png" width="250" alt="App language and default currency preferences" /></td>
-    <td><img src="docs/screenshots/settings-az.png" width="250" alt="Settings localized into Azerbaijani" /></td>
-  </tr>
-</table>
+Live bank connectivity is unavailable. The Connect Bank screen explains manual accounts; Ledgerly never requests full card numbers, CVV, PIN, or banking passwords.
 
 ## Languages and currencies
 
-| Languages | ISO currency codes |
-| --- | --- |
-| Azərbaycanca (`az`) | Azerbaijani manat — `AZN` |
-| English (`en`) | US dollar — `USD` |
-| Русский (`ru`) | Euro — `EUR` |
-| Türkçe (`tr`) | Russian ruble — `RUB` |
+Languages: English, Azerbaijani, Russian, Turkish, Ukrainian, Serbian Latin, Serbian Cyrillic, French, German, and Arabic (RTL). The compact language picker uses native names and flag cues; language preferences remain independent of currency. Native-speaker review is still recommended. Spanish is not currently implemented.
 
-Language and currency are independent preferences. Numbers, money and dates use the selected app locale; user-written notes are preserved as entered.
-
-### Financial correctness
-
-- Each transaction stores a **positive `Long` amount in minor units**, an ISO currency code, and an income/expense direction.
-- All four supported currencies use two decimal places. Input accepts a decimal point or comma and rejects ambiguous grouping or excess precision.
-- Aggregates use **`BigInteger` minor units**, so many individually valid amounts cannot overflow a `Long` total.
-- Balances are **grouped by currency**. USD and AZN, for example, are never added together.
-- Formatting uses exact `BigDecimal` values and locale-aware `NumberFormat`.
-- Changing the default currency affects only new drafts. Explicitly changing an existing entry’s currency corrects its denomination; it does **not** apply a conversion rate.
-- Schema version **2** includes an explicit `1 → 2` migration assigning USD to legacy records. IDs, minor-unit amounts, dates, categories and descriptions are preserved. No destructive migration fallback is enabled.
-
-## Tech stack
-
-| Area | Implementation |
-| --- | --- |
-| Language and UI | Kotlin, Jetpack Compose, Material 3 |
-| Architecture | MVVM, domain/data/UI package boundaries, repository contracts |
-| Dependency injection | Hilt with KSP |
-| Persistence | Room, exported schemas, explicit migration |
-| State and concurrency | Coroutines, Flow, StateFlow, lifecycle-aware collection |
-| Navigation | Navigation Compose |
-| Preferences | Preferences DataStore; AppCompat per-app locales |
-| Animation | Compose AnimatedContent, transitions, springs and animated list placement |
-| Tests | JUnit 4, Coroutines Test, Compose UI tests, AndroidX Test, Room MigrationTestHelper |
-| Build | Gradle Kotlin DSL, version catalog, AGP 8.9.1, Gradle 8.11.1 |
+Currencies: **AZN, USD, EUR, RUB, UAH, RSD**. Language and currency are independent preferences. Provider coverage for conversion can vary; unsupported pairs are reported as unavailable.
 
 ## Architecture
 
-One app module keeps the project straightforward while separating responsibilities.
+Gradle Kotlin DSL and a version catalog define four populated modules:
+
+| Module | Responsibility | Project dependencies |
+| --- | --- | --- |
+| `:app` | Application entry point, screen ViewModels, navigation, screens, app resources and integration tests | `:domain`, `:data`, `:core:designsystem` |
+| `:domain` | Android-independent models, repository contracts, transaction validation, exact calculations and financial rules | None |
+| `:data` | Room entities/DAOs/repositories/migrations, DataStore and AppCompat adapters, exchange-rate cache, Hilt storage bindings | `:domain` |
+| `:core:designsystem` | Shared Compose components, typography, light/dark colors and motion behavior | None |
+
+Feature extraction is intentionally incremental. Screens remain in `:app`; no empty feature modules have been added. Domain types are organized into `model`, `repository`, `usecase`, and `calculation`; data types into `repository` and `local`. The Room database class identity remains stable.
 
 ```mermaid
-flowchart LR
-    UI[Compose screens] --> VM[ViewModels / StateFlow]
-    VM --> Domain[Use cases and contracts]
-    Domain --> Repo[Room repository]
-    Repo --> DB[(Room database)]
-    DB -->|Flow updates| VM
-    VM --> Preferences[DataStore / AppCompat locales]
+flowchart TD
+    App[app: UI and navigation] --> Domain[domain: contracts and rules]
+    App --> Data[data: storage and adapters]
+    App --> Design[core:designsystem]
+    Data --> Domain
 ```
 
-```text
-app/src/main/java/com/jrustam/ledgerly/
-├── data/                 # Room, mappings, migration and preference adapters
-├── di/                   # Hilt bindings
-├── domain/               # Models, contracts, validation and exact totals
-└── ui/
-    ├── addtransaction/   # Shared Add/Edit form and saved draft state
-    ├── common/           # Locale-aware formatting and currency selection
-    ├── design/           # Shared surfaces, toolbar, navigation and motion
-    ├── overview/         # Dashboard, history, filtering and deletion
-    ├── settings/         # Language and default-currency settings
-    └── theme/            # Centralized light/dark palettes and typography
-```
+Room is the source of truth for financial records. Coroutines, Flow and lifecycle-aware StateFlow collection propagate changes. Hilt supplies dependencies. DataStore persists currency, onboarding, appearance and cached-rate preferences; Android/AppCompat persists per-app languages.
 
-Room is the single source of truth. UI events pass through ViewModels and the domain layer; database invalidations update both Home and history. SavedStateHandle preserves editor drafts across recreation. Stable draft IDs make insert retries idempotent, while updates never recreate a transaction that was deleted during editing.
+### Financial correctness and compatibility
 
-## Getting started
+- Transactions store positive `Long` minor-unit amounts and ISO currency codes. All currently supported currencies have two fraction digits.
+- Totals use `BigInteger`; conversions use `BigDecimal` and explicit rounding. Floating-point values are used only for drawing progress, never persisted money.
+- Different currencies are never silently summed. Transfers do not count as income or expenses.
+- Schema **v3** and exported v1/v2/v3 schemas live in `data/schemas`. Explicit migrations preserve records; no destructive fallback is configured.
+- Database filename, database class identity, schema, DataStore filename and existing preference keys are preserved.
+- Goal contributions track amounts set aside; they do not debit wallets. Opening-balance adjustments currently overwrite the baseline rather than create an audit entry.
 
-### Requirements
+### Domain operations and state ownership
 
-- Android Studio with **JDK 17**
-- Android SDK **35** and compatible build tools
-- An Android device or emulator running **API 24+**
+`AddTransaction` and `EditTransaction` retain their existing validation and persistence behavior. The extracted operations are:
+
+- `CalculateLedgerBalancesUseCase`: wallet baselines, transfers and unassigned legacy transactions, grouped by currency without double counting.
+- `GetFinancialSummaryUseCase`: calendar-month totals, category breakdown, six-month trends, budget warnings and scheduled recurring totals.
+- `ConvertCurrencyUseCase`: exact same-currency values, validated currency pairs, unavailable rates and explicitly approximate decimal conversions.
+- `ExportTransactionsUseCase`: a consistent repository snapshot formatted as escaped CSV off the main dispatcher.
+
+Finance and product ViewModels expose read-only StateFlow. Financial reports are prepared on the Default dispatcher; Compose renders those results. Product preferences and exchange rates are accessed through domain contracts. CSV export is coordinated by its own ViewModel and Android document writer; navigation no longer performs file I/O or currency conversion. Cancellation guards prevent older exchange requests from clearing a newer request's loading state.
+
+## Build and run
+
+Requirements: Android Studio, JDK 17 or a compatible bundled JDK, Android SDK 35, and a device/emulator on API 24+.
 
 ```bash
 git clone https://github.com/JRustam/Ledgerly.git
 cd Ledgerly
 ./gradlew :app:assembleDebug
-```
-
-Open the repository root in Android Studio, let Gradle sync, select the `app` configuration, and run it on your device. Android Studio creates the machine-specific `local.properties` file; it is intentionally excluded from Git.
-
-To install the debug APK manually:
-
-```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The repository uses the Gradle wrapper. No API keys, backend, login, exchange-rate service, or release signing keys are required. This is an actively developed application, not a Google Play release.
+Open the repository root in Android Studio and run the `app` configuration. Local SDK configuration and signing material are excluded from Git. No API keys or backend are needed.
 
-## Testing
+## Verification
+
+Latest profile and source-organization changes were checked with the debug build only. Unit tests, instrumentation tests, and lint were not run for this update.
 
 ```bash
-# Compile, run JVM tests, and run Android lint
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+# Build, run JVM tests in their owning modules, and verify module boundaries
+./gradlew :app:assembleDebug :app:testDebugUnitTest :domain:test validateModuleDependencies
 
-# Run device tests on a dedicated emulator
+# Lint Android modules
+./gradlew :app:lintDebug :data:lintDebug :core:designsystem:lintDebug
+
+# Compile integration tests without requiring a device
+./gradlew :app:assembleDebugAndroidTest
+
+# Execute device tests on a disposable emulator
 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
 ```
 
-Tests cover exact balances, overflow-safe totals, currency separation, locale formatting, preference persistence, validation, draft restoration, retries, filtering, deletion errors, Room persistence and migration, and language selection across activity recreation.
+The portfolio flow is opt-in: add `-Pandroid.testInstrumentationRunnerArguments.portfolioScreenshots=true`. It requires an empty transaction/wallet database, creates synthetic fixtures in test code only, and attempts cleanup afterward. Use a disposable emulator, never a personal ledger. Existing device-test runtime failures remain under investigation; test APK compilation alone is not a passing device test.
 
-The screenshot/core-flow test is opt-in and requires an **empty, disposable emulator ledger**. It creates and removes only its own fixture records and exercises editing, deletion confirmation, navigation, localization and dark mode:
+The module dependency validation task rejects unexpected project dependencies and cycles. Test/build results and limitations are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
-```bash
-./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.portfolioScreenshots=true \
-  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
-```
+## Privacy
 
-Captured PNGs are written to the app’s external `files/portfolio` directory. Standard instrumentation tooling can replace app installations, so use a dedicated emulator rather than a personal ledger.
+Finance records stay in the app-private database. Currency refresh sends selected currency codes to [Frankfurter](https://frankfurter.dev/) over HTTPS, not transaction records. There is no analytics SDK, account login, or application cloud-sync service.
 
-Latest local verification and device configurations are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md). In restricted environments, `-Pkotlin.compiler.execution.strategy=in-process --no-watch-fs` avoids compiler-daemon filesystem restrictions.
+Android system backup is enabled and may include application data. Backup exclusions, encryption, optional biometric locking, and release privacy documentation need review before a store release. CSV export includes transactions only; it is not a full backup/restore format.
 
-## Privacy and offline behavior
+## Remaining work
 
-Ledgerly has no application network permission, analytics SDK, login, or cloud backend. Transactions are stored in the app-private Room database; the default currency is stored in DataStore. Language persistence uses Android/AppCompat’s per-app locale mechanism.
+- Device verification of the updated Settings and My Profile screens, including photo selection and restart persistence.
+- Recoverable startup preference failures.
+- Device verification of v1 → v3 migration and a dedicated populated v2 → v3 migration test.
+- Navigation recovery after deletion, wallet-adjustment audit history, contribution correction and recurring reminders.
+- Large-ledger performance, accessibility/large-font and RTL testing, updated screenshots, and release toolchain review.
 
-Android system backup remains enabled from the original project and may include app data. Backup policy, optional encryption and release privacy documentation require review before a future store release. Do not treat the current build as an encrypted vault.
+Earlier emulator screenshots remain in `docs/screenshots` for reference; they depict the previous visual revision and are not evidence of current UI verification.
 
-## Current scope and roadmap
-
-Implemented: local transaction management, multi-currency totals, localization, preferences, themes and motion.
-
-Planned, not implemented:
-
-- Insights and spending charts; the Insights tab currently explains its future purpose.
-- Search, richer filters and paging for large ledgers.
-- User-controlled export/import and a deliberate backup policy.
-- Release SDK/toolchain updates, expanded accessibility/device testing, and native-speaker translation review.
-- Google Play release preparation and signing outside the repository.
-
-There are no live exchange rates, currency conversion, cloud sync, login or premium features.
-
----
-
-Built by [JRustam](https://github.com/JRustam) with Kotlin and Jetpack Compose.
+Built by [JRustam](https://github.com/JRustam).

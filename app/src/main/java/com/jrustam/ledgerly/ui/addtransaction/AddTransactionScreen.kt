@@ -19,7 +19,10 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jrustam.ledgerly.R
-import com.jrustam.ledgerly.domain.*
+import com.jrustam.ledgerly.domain.model.Category
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
+import com.jrustam.ledgerly.domain.model.TransactionType
+import com.jrustam.ledgerly.domain.model.Wallet
 import com.jrustam.ledgerly.ui.common.*
 import com.jrustam.ledgerly.ui.design.*
 import com.jrustam.ledgerly.ui.theme.LedgerlyTheme
@@ -41,11 +44,13 @@ fun AddTransactionScreen(
     onDescription: (String) -> Unit,
     onSave: () -> Unit,
     onCurrency: (LedgerCurrency) -> Unit = {},
+    wallets: List<Wallet> = emptyList(),
+    onWallet: (Wallet?) -> Unit = {},
     showHeading: Boolean = true
 ) {
     val locale = appLocale()
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    Scaffold(containerColor = Color.Transparent, modifier = Modifier.imePadding(), bottomBar = {
+    Scaffold(containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, modifier = Modifier.imePadding(), bottomBar = {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(Modifier
                 .navigationBarsPadding()
@@ -83,7 +88,7 @@ fun AddTransactionScreen(
                         )
                         CurrencySelector(
                             state.currency,
-                            !state.isSaving,
+                            !state.isSaving && state.walletId == null,
                             compact = true,
                             onSelect = onCurrency
                         )
@@ -131,6 +136,7 @@ fun AddTransactionScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            com.jrustam.ledgerly.ui.finance.WalletChoice(wallets, state.walletId, onWallet, !state.isSaving)
             LedgerSelection(
                 listOf(
                     stringResource(R.string.expense),

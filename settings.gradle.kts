@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Ledgerly"
-include(":app")
+include(":app", ":domain", ":data", ":core:designsystem")

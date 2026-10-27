@@ -5,7 +5,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.platform.app.InstrumentationRegistry
 import com.jrustam.ledgerly.data.TransactionDatabase
-import com.jrustam.ledgerly.data.TransactionEntity
+import com.jrustam.ledgerly.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -24,9 +24,9 @@ class TransactionMigrationTest {
                 execSQL("INSERT INTO transactions VALUES ('legacy', 12345, 'USD', 'EXPENSE', 'FOOD', 20000, 'Lunch')")
                 close()
             }
-            helper.runMigrationsAndValidate(name, 2, true, TransactionDatabase.MIGRATION_1_2).close()
+            helper.runMigrationsAndValidate(name, 3, true, TransactionDatabase.MIGRATION_1_2, TransactionDatabase.MIGRATION_2_3).close()
             val db = Room.databaseBuilder(instrumentation.targetContext, TransactionDatabase::class.java, name)
-                .addMigrations(TransactionDatabase.MIGRATION_1_2).build()
+                .addMigrations(TransactionDatabase.MIGRATION_1_2, TransactionDatabase.MIGRATION_2_3).build()
             try {
                 assertEquals(TransactionEntity("legacy", 12345, "USD", "EXPENSE", "FOOD", 20000, "Lunch"),
                     db.transactionDao().findById("legacy"))

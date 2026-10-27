@@ -37,24 +37,26 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    sourceSets["androidTest"].assets.srcDir("$projectDir/schemas")
+    sourceSets["androidTest"].assets.srcDir(rootProject.file("data/schemas"))
     buildFeatures {
         compose = true
     }
 }
 
-ksp { arg("room.schemaLocation", "$projectDir/schemas") }
+
 
 dependencies {
+    implementation(project(":domain"))
+    implementation(project(":data"))
+    implementation(project(":core:designsystem"))
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
+    androidTestImplementation(libs.room.runtime)
+    androidTestImplementation(libs.room.ktx)
     implementation(libs.coroutines.android)
     coreLibraryDesugaring(libs.desugar)
     testImplementation(libs.coroutines.test)
@@ -70,7 +72,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.datastore.preferences)
+    testImplementation(libs.androidx.datastore.preferences)
     androidTestImplementation(libs.androidx.room.testing)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

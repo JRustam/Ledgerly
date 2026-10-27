@@ -2,7 +2,10 @@ package com.jrustam.ledgerly.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jrustam.ledgerly.domain.*
+import com.jrustam.ledgerly.domain.model.AppLanguage
+import com.jrustam.ledgerly.domain.model.LedgerCurrency
+import com.jrustam.ledgerly.domain.repository.CurrencyPreferences
+import com.jrustam.ledgerly.domain.repository.LanguagePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException

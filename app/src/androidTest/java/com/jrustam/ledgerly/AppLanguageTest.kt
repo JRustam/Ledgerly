@@ -14,14 +14,14 @@ class AppLanguageTest {
         var original = ""
         scenario.onActivity { original = AppCompatDelegate.getApplicationLocales().toLanguageTags() }
         try {
-            for ((tag, settings) in mapOf("az" to "Ayarlar", "en" to "Settings", "ru" to "Настройки", "tr" to "Ayarlar")) {
+            for ((tag, settings) in mapOf("az" to "Ayarlar", "en" to "Settings", "ru" to "Настройки", "tr" to "Ayarlar", "uk" to "Налаштування", "sr-Latn" to "Podešavanja", "sr-Cyrl" to "Подешавања")) {
                 scenario.onActivity { AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag)) }
                 instrumentation.waitForIdleSync()
                 scenario.recreate()
                 scenario.onActivity {
                     assertEquals(tag, AppCompatDelegate.getApplicationLocales().toLanguageTags())
                     assertEquals(settings, it.getString(R.string.settings))
-                    assertEquals(tag, it.resources.configuration.locales[0].language)
+                    assertEquals(tag.substringBefore('-'), it.resources.configuration.locales[0].language)
                 }
             }
         } finally {
